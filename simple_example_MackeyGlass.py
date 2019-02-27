@@ -32,8 +32,10 @@ set_seed(seed) #random.seed(seed)
 # 30 seems to be enough for initLen with leak_rate=0.3 and reservoir size (resSize) = 300
 initLen = 100 # number of time steps during which internal activations are washed-out during training
 # we consider trainLen including the warming-up period (i.e. internal activations that are washed-out when training)
-trainLen = initLen + 1900 # number of time steps during which we train the network
-testLen = 2000 # number of time steps during which we test/run the network
+trainLen = initLen + 900 # number of time steps during which we train the network
+testLen = 8999 # number of time steps during which we test/run the network
+# trainLen = initLen + 1900 # number of time steps during which we train the network
+# testLen = 2000 # number of time steps during which we test/run the network
 
 data = np.loadtxt('MackeyGlass_t17.txt')
 print( "data dimensions", data.shape)
@@ -173,9 +175,24 @@ print("Normalized RMSE (based on max - min):\t%.4e" % (nmrse_maxmin) )
 print("********************\n")
 
 plt.figure()
-plt.plot( internal_trained[0][:200,:12])
+# plt.plot( internal_trained[0][:200,:12])
+plt.plot( internal_trained[0][:,:12])
 plt.ylim([-1.1,1.1])
-plt.title('Activations $\mathbf{x}(n)$ from Reservoir Neurons ID 0 to 11 for 200 time steps')
+plt.title('Activations $\mathbf{x}(n)$ from Reservoir Neurons ID 0 to 11 for 200 time steps (for train)')
+
+plt.figure()
+# plt.plot( internal_trained[0][:200,:12])
+plt.plot( internal_pred[0][:,:12])
+plt.ylim([-1.1,1.1])
+plt.title('Activations $\mathbf{x}(n)$ from Reservoir Neurons ID 0 to 11 for 200 time steps (for test)')
+
+np.savetxt('reservoir-internal-train-1000neurons.txt', internal_trained[0][:,:])
+np.savetxt('reservoir-internal-test-1000neurons-8999timesteps.txt', internal_pred[0][:,:])
+np.savetxt('reservoir-internal-test-100neurons-8999timesteps.txt', internal_pred[0][:,:100])
+np.savetxt('reservoir-internal-test-100neurons-1000timesteps.txt', internal_pred[0][:1000,:100])
+
+# with open('reservoir-internal/neuron'+str()+''.txt',wb) as f:
+#     for
 
 plt.figure(figsize=(12,4))
 plt.plot(test_out,  color='0.75', lw=1.0)
