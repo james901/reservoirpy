@@ -660,3 +660,9 @@ class ESN(object):
                 "std": np.std(self.Wout)  
             }
         return desc
+
+
+class ESNBase(object):
+    
+    def __init__(self, in_dims, out_dims):
+        ...
