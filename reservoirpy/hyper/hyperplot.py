@@ -44,7 +44,16 @@ def logscale_plot(ax, xrange, yrange, base=10):
 
 
 def scale(x):
-    return (x - x.min()) / (x.ptp())
+    if len(x) == 0:
+        print("WARNING : The array of scores is empty")
+        return x
+    
+    range_of_x_values = x.ptp()
+    if (range_of_x_values != 0):
+        return (x - x.min()) / (x.ptp())
+    else:
+        return x/x.min() #an array of 1 if all the values are identical
+        
 
 
 def cross_parameter_plot(ax, values, scores, loss, smaxs, cmaxs, lmaxs, p1, p2, log1, log2):
@@ -64,7 +73,7 @@ def cross_parameter_plot(ax, values, scores, loss, smaxs, cmaxs, lmaxs, p1, p2, 
     ax.set_xlabel(p2)
     ax.set_ylabel(p1)
     
-    sc_l = ax.scatter(X[lmaxs], Y[lmaxs], scores[lmaxs]*100, c=loss[lmaxs], cmap="inferno")
+    sc_l = ax.scatter(X[lmaxs], Y[lmaxs], scores[lmaxs]*100, c=np.log(loss[lmaxs]), cmap="inferno") #the color scale of the loss is logarithmic
     sc_s = ax.scatter(X[smaxs], Y[smaxs], scores[smaxs]*100, c=cmaxs, cmap="YlGn")
     sc_m = ax.scatter(X[~(lmaxs)], Y[~(lmaxs)], scores[~(lmaxs)]*100, color="red")
     
@@ -140,7 +149,7 @@ def parameter_violin(ax, values, scores, loss, smaxs, cmaxs, p, log, legend):
         ax.legend(loc=2)
 
 
-def plot_hyperopt_report(exp, params, metric='loss', not_log=None, max_deviation=None, title=None):
+def plot_hyperopt_report(exp, params, metric='loss', not_log=None, max_deviation=None, rescale_scores=True, use_log_score = False, minimize_score = True, best_proportion_to_show = 0.05, title=None):
     """Cross paramater scatter plot of hyperopt trials.
     
     Installation of Matplotlib and Seaborn packages is required to use this tool.
@@ -155,6 +164,11 @@ def plot_hyperopt_report(exp, params, metric='loss', not_log=None, max_deviation
         not_log {Sequence} -- Parameters to plot with a linear scale. By default, all scales are logarithmic.
         max_deviation {float} -- Maximum standard deviation expected from the loss mean. Useful to remove outliers. 
                                  (default: {None})
+        rescale_scores {bool} -- Rescale the scores linearly to a range of [0,1] (default : {True})
+        use_log_score {bool} -- If true, the logarithm of the score will be use for the plots (default : {False})
+        minimize_score {bool} -- Whether to put forward minimal values of the score or maximal values (default : {True})
+        best_proportion_to_show {float} -- The proportion of the scores that should be put forward, must be in the range [0,1]. (default : {0.05})
+        
         title {str} -- Optional title for the figure. (default: {None})
 
     Returns:
@@ -174,6 +188,9 @@ def plot_hyperopt_report(exp, params, metric='loss', not_log=None, max_deviation
     loss = np.array([r['returned_dict']['loss'] for r in results])
     scores = np.array([r['returned_dict'][metric] for r in results])
     
+    if use_log_score:
+        scores = np.log(scores)
+    
     if max_deviation is not None:
         not_outliers = outliers_idx(loss, max_deviation)
         loss = loss[not_outliers]
@@ -182,17 +199,24 @@ def plot_hyperopt_report(exp, params, metric='loss', not_log=None, max_deviation
     else:
         values = {p: np.array([r['current_params'][p] for r in results]) for p in params}
         
-    if scores.max() > 1.0:
-        scores = 1 - scale(scores)
+
+        
+    if rescale_scores:
+        scores = scale(scores)
+        if minimize_score:
+            scores = 1 - scores # We invert the order of the score value so that the bigger values correspond to the minimal orginal scores. They are the new maximal ones that will be put forward.
         
     ## loss and f1 values
 
     lmaxs = loss > loss.min()
     c_l = np.log10(loss[lmaxs])
 
-    percent = math.ceil(len(scores) * 0.05)
-    smaxs = scores.argsort()[-percent:][::-1]
-    cmaxs = scale(scores[smaxs])    
+    percent = math.ceil(len(scores) * best_proportion_to_show)
+    
+
+    sbest = scores.argsort()[-percent:][::-1]
+    
+    cbest = scale(scores[sbest])    
     
     ## gridspecs
 
@@ -216,28 +240,35 @@ def plot_hyperopt_report(exp, params, metric='loss', not_log=None, max_deviation
             ax = fig.add_subplot(gs1[i, j])
             axes.append(ax)
             if p1 == p2:
-                sc_l, sc_s, sc_m = loss_plot(ax, values, scores, loss, smaxs, 
-                                             cmaxs, lmaxs, p2, not(p2 in not_log),
+                sc_l, sc_s, sc_m = loss_plot(ax, values, scores, loss, sbest, 
+                                             cbest, lmaxs, p2, not(p2 in not_log),
                                              (i==0 and j==0))
             else:
                 sc_l, sc_s, sc_m = cross_parameter_plot(ax, values, scores, loss, 
-                                     smaxs, cmaxs, lmaxs, p1, p2, 
+                                     sbest, cbest, lmaxs, p1, p2, 
                                      not(p1 in not_log), not(p2 in not_log))
 
     #legends
 
     handles, labels = sc_l.legend_elements(prop="sizes")
-    legend = rad_ax.legend(handles, labels, loc="center left", 
-                           title=f"Normalized {metric} (%)", mode='expand', 
-                           ncol=len(labels) // 2 + 1)
+    
+    if use_log_score:
+        legend = rad_ax.legend(handles, labels, loc="center left", 
+                            title=f"Normalized log of {metric} (%)", mode='expand', 
+                            ncol=len(labels) // 2 + 1)
+    else:
+        legend = rad_ax.legend(handles, labels, loc="center left", 
+                            title=f"Normalized {metric} (%)", mode='expand', 
+                            ncol=len(labels) // 2 + 1)
+        
 
     l_cbar = fig.colorbar(sc_l, cax=lbar_ax, ax=axes, orientation="horizontal")
-    _ = l_cbar.ax.set_title("Loss value")
+    _ = l_cbar.ax.set_title("Loss value (logarithmic color scale)")
 
     f_cbar = fig.colorbar(sc_s, cax=fbar_ax, ax=axes, 
                           orientation="horizontal", ticks=[0, 0.5, 1])
     _ = f_cbar.ax.set_title(f"{metric} best population")
-    _ = f_cbar.ax.set_xticklabels(["5% best", "2.5% best", "Best"])
+    _ = f_cbar.ax.set_xticklabels([f"{round(best_proportion_to_show*100)}% best", f"{round(best_proportion_to_show*50)}% best", "Best"])
 
     # violinplots
 
@@ -245,8 +276,10 @@ def plot_hyperopt_report(exp, params, metric='loss', not_log=None, max_deviation
         ax = fig.add_subplot(gs1[-1, i])
         legend = True if i == 0 else False
         parameter_violin(ax, values, scores, 
-                         loss, smaxs, cmaxs, p, not(p in not_log), legend)
+                         loss, sbest, cbest, p, not(p in not_log), legend)
         if legend:
-            ax.set_ylabel(f"5% best {metric}\nparameter distribution")
+            ax.set_ylabel(f"{round(best_proportion_to_show*100)}% best {metric}\nparameter distribution")
     return fig
-    
+
+
+
