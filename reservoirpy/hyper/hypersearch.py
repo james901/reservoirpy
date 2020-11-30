@@ -6,6 +6,7 @@ import json
 import warnings
 from os import path
 from functools import partial
+from glob import glob
 
 import numpy as np
 
@@ -91,6 +92,25 @@ def _get_report_path(exp_name, base_path=None):
 
 
 def research(objective, dataset, config_path, report_path=None):
+    """
+    Wrapper for hyperopt fmin function. WIll run hyperopt fmin on the
+    objective function passed as argument, on the data stored in the 
+    dataset argument. 
+    
+    Arguments:
+        objective {Callable} -- Objective function defining the function to
+                                optimize. Must be able to receive the dataset argument and 
+                                all parameters sampled by hyperopt during the search. These 
+                                parameters must be keyword arguments only without default value
+                                (this can be achieve by separating them from the other arguments
+                                with an empty starred expression. See examples for more info.)
+        dataset {Any} -- Argument used to pass data to the objective function during the hyperopt run.
+        config_path {str or Path} -- Path to the hyperopt experimentation configuration file used to
+                                     define this run.
+    Keywords arguments:
+        report_path {str} -- Path to the directory where to store the results of the run. By default,
+                             this directory is set to be {name of the experiment}/results/. [default: None]
+    """
     
     import hyperopt as hopt
     
@@ -111,7 +131,7 @@ def research(objective, dataset, config_path, report_path=None):
             returned_dict['start_time'] = start
             returned_dict['duration'] = duration
             
-            save_file = f"{returned_dict['loss']:.6f}_hyperopt_results_1call.json"
+            save_file = f"{returned_dict['loss']:.6f}_hyperopt_results"
             
         except Exception as e:
             raise e
@@ -123,11 +143,14 @@ def research(objective, dataset, config_path, report_path=None):
                 'error': str(e),
             }
             
-            save_file = f"ERR{start}_hyperopt_results_1call.json"
+            save_file = f"ERR{start}_hyperopt_results"
             
         try:
             json_dict = {'returned_dict': returned_dict, 'current_params': kwargs}
-            with open(path.join(report_path, save_file), "w+") as f:
+            save_file = path.join(report_path, save_file)
+            nb_save_file_with_same_loss = len(glob(f"{save_file}*"))
+            save_file = f"{save_file}_{nb_save_file_with_same_loss+1}call.json"
+            with open(save_file, "w+") as f:
                 json.dump(json_dict, f)
         except Exception as e:
             warnings.warn("Results of current simulation were NOT saved correctly to JSON file.")

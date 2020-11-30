@@ -1,11 +1,13 @@
 # ReservoirPy (v0.2)
 **A simple and flexible code for Reservoir Computing architectures like Echo State Networks (ESN).**
 
-This toolbox works for Python 3 (and should be compatible for Python2). We just updated it from Python 2 to 3, so tell us if you have any issue with it.
+ReservoriPy is a simple user-friendly library based on Python scientific modules. It provides a flexible interface to implement efficient Reservoir Computing (RC) architectures with a particular focus on Echo State Networks (ESN). Advanced features of ReservoirPy allow to improve computation time efficiency on a simple laptop compared to basic Python implementation. Some of its features are: offline and online training, parallel implementation, sparse matrix computation, fast spectral initialization, etc. Moreover, graphical tools are included to easily explore hyperparameters with the help of the hyperopt library.          
+
+This library works for Python 3 (and should be compatible for Python2). We just updated it from Python 2 to 3, so tell us if you have any issue with it.
 
 ## Installation
 
-This toolbox is not yet available through PyPI, but can be installed with `pip` using a local clone of this repository:
+This library is not yet available through PyPI, but can be installed with `pip` using a local clone of this repository:
 
 ```bash
 # clone or download the repository
@@ -129,4 +131,7 @@ If you want to have more information on all the steps and more option (for examp
 ## Explore Hyper-Parameters with Hyperopt
 Tutorial on how to explore hyperparameters with ReservoirPy and Hyperopt can be found in this [preprint (Trouvain et al. 2020)](https://hal.inria.fr/hal-02595026).
 
-More info on hyperopt: [Official website](hyperopt.github.io)
+More info on hyperopt: [Official website](http://hyperopt.github.io/hyperopt/)
+
+## Cite
+Nathan Trouvain, Luca Pedrelli, Thanh Trung Dinh, Xavier Hinaut. ReservoirPy: an Efficient and User-Friendly Library to Design Echo State Networks. 2020. ⟨hal-02595026⟩ https://hal.inria.fr/hal-02595026
