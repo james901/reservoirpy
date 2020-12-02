@@ -60,7 +60,7 @@ class Initializer(ABC):
 
         Parameters:
         -----------
-        :param seed: , defaults to None
+        :param seed: if None, randomize the state. Defaults to None.
         :type seed: int, optional
         """
         self.seed = seed
