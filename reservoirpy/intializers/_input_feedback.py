@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Union
 
 import numpy as np
 
@@ -48,13 +48,8 @@ class BinaryScaling(RandomSparse):
                  ):
         super(BinaryScaling, self).__init__(self,
                                             connectivity,
-                                            distribution="uniform",
+                                            distribution="choice",
                                             sparsity_type=sparsity_type,
                                             seed=seed,
-                                            low=0, high=2)
+                                            a=[-1, 1])
         self.scaling = scaling
-
-    def __call__(self, shape: Tuple[int, int]):
-        matrix = super(BinaryScaling, self).__call__(shape)
-        matrix *= self.scaling
-        return matrix
