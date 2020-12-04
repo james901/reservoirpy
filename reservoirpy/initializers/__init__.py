@@ -1,3 +1,9 @@
+"""
+===================
+Weight initializers
+===================
+"""
+
 import warnings
 
 from typing import Union
@@ -51,25 +57,40 @@ def initializer(method: str,
                 seed: Union[int, RandomState] = None,
                 **kwargs
                 ) -> Initializer:
-    """[summary]
+    """Returns an intializer given the
+    parameters.
 
-    :param method: [description]
-    :type method: str
-    :param seed: [description]
-    :type seed: Union[int, RandomState]
-    :param connectivity: [description], defaults to None
-    :type connectivity: float, optional
-    :param scaling: [description], defaults to None
-    :type scaling: int, optional
-    :param spectral_radius: [description], defaults to None
-    :type spectral_radius: int, optional
-    :raises ValueError: [description]
-    :raises ValueError: [description]
-    :return: [description]
-    :rtype: Initializer
+    Parameters
+    ----------
+    method : {"normal", "uniform", "binary", "fsi"}
+        Method used for randomly sample the weights.
+        "fsi" can only be used with spectral scaling.
+    connectivity : float, optional
+        Probability of connection between units. Density of
+        the sparse matrix.
+    scaling : int, optional
+        Scaling coefficient to apply on the weights. Can not be used
+        with spectral scaling.
+    spectral_radius : int, optional
+        Maximum eigenvalue of the initialized matrix. Can not be used
+        with regular scaling.
+    seed : int or RandomState, optional
+        Random state generator seed or RandomState instance.
+
+    Returns
+    -------
+    Initializer
+        An :class: `Initializer` object.
+
+    Raises
+    ------
+    ValueError
+        Can't perfom both spectral scaling and regular scaling.
+    ValueError
+        Method is not recognized.
     """
     if scaling is not None and spectral_radius is not None:
-        raise ValueError("can't perfom both spectral scaling and const scaling.")
+        raise ValueError("can't perfom both spectral scaling and regular scaling.")
 
     selection = _registry.get(method)
 

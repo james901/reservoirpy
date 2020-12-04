@@ -1,14 +1,13 @@
 """:mod: `reservoirpy.intializers._base` provides base
 utility for initializer definition.
 """
-
 from typing import Tuple, Union
 from abc import ABC
 
-import scipy
 import numpy as np
 
 from scipy import sparse
+from scipy.sparse.csr import csr_matrix
 from numpy.random import RandomState
 
 
@@ -59,7 +58,7 @@ class Initializer(ABC):
         self.reset_seed(seed)
 
     def __call__(self, shape: Tuple[int, int]
-                 ) -> Union[np.ndarray, scipy.sparse]:
+                 ) -> Union[np.ndarray, csr_matrix]:
         raise NotImplementedError
 
     @property
@@ -138,7 +137,7 @@ class RandomSparse(Initializer):
         #  reset the RandomState and the distribution function
         #  when resetting the seed
         self.reset_seed(value)
-        self._set_distribution(self.distribution,
+        self._set_distribution(self._distribution,
                                self._rvs_kwargs)
 
     @property
@@ -147,12 +146,13 @@ class RandomSparse(Initializer):
         str: a RandomState random statistical
         distribution generator function name.
         """
+        return self._distribution
 
     @distribution.setter
-    def distribution(self, value, **kwargs):
+    def distribution(self, value: str, **kwargs):
         #  reset the distribution
-        self.distribution = value
-        self._set_distribution(value, **kwargs)
+        self._distribution = value
+        self._set_distribution(self._distribution, **kwargs)
 
     def __init__(self,
                  connectivity: float = 0.1,
@@ -164,7 +164,8 @@ class RandomSparse(Initializer):
 
         self.connectivity = connectivity
         self.sparsity_type = sparsity_type
-        self.distribution = distribution
+
+        self._distribution = distribution
 
         #  partial function to draw random samples
         #  initialized with kwargs
@@ -175,7 +176,7 @@ class RandomSparse(Initializer):
 
     def __call__(self,
                  shape: Tuple[int, int]
-                 ) -> Union[np.ndarray, scipy.sparse]:
+                 ) -> Union[np.ndarray, csr_matrix]:
         """Produce a random sparse matrix of specifiyed shape.
 
         Parameters

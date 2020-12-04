@@ -1,7 +1,7 @@
 """:mod: `reservoirpy.initilializers._internal`
 Provides base tools for internal reservoir weights initialization.
 """
-from typing import Union
+from typing import Union, Tuple
 
 import scipy
 import numpy as np
@@ -10,6 +10,9 @@ from numpy.random import RandomState
 from scipy import linalg
 from scipy import sparse
 from scipy.sparse.linalg import eigs
+from scipy.sparse.csr import csr_matrix
+from scipy.sparse.coo import coo_matrix
+from scipy.sparse.csc import csc_matrix
 
 from ._base import RandomSparse
 
@@ -36,7 +39,7 @@ class FastSpectralScaling(RandomSparse):
     Usage:
     ------
         >>> fsi = FastSpectralScaling(spectral_radius=0.9)
-        >>> fsi(5)  # generate a (5, 5) weight matrix
+        >>> fsi((5, 5)  # generate a 5x5 weight matrix
 
     Parameters:
     -----------
@@ -85,7 +88,7 @@ class FastSpectralScaling(RandomSparse):
         str: a RandomState random statistical
         distribution generator function name.
         """
-        return self.distribution
+        return self._distribution
 
     @distribution.setter
     def distribution(self, value, **kwargs):
@@ -99,21 +102,21 @@ class FastSpectralScaling(RandomSparse):
                  seed: Union[int, RandomState] = None):
         # uniform distribution between -1 and 1 by default. this will
         # change at each call.
-        super(SpectralScaling, self).__init__(self, connectivity, 'uniform',
-                                              sparsity_type, seed,
-                                              low=-1, high=1)
+        super(FastSpectralScaling, self).__init__(connectivity, 'uniform',
+                                                  sparsity_type, seed,
+                                                  low=-1, high=1)
         self.spectral_radius = spectral_radius
 
     def __call__(self,
-                 units: int,
-                 ) -> Union[np.ndarray, scipy.sparse]:
+                 shape: Tuple[int, int],
+                 ) -> Union[np.ndarray, csr_matrix, csc_matrix, coo_matrix]:
         """Produce a random sparse matrix of representing the
         weights of a specifyed number of neuronal units.
 
         Parameters
         ----------
-        units : int
-            Number of neurons.
+        shape : tuple of int
+            Shape of weights matrix.
 
         Returns
         -------
@@ -124,12 +127,12 @@ class FastSpectralScaling(RandomSparse):
             the initializer.
         """
         # adapt FSI coef to the current reservoir shape
-        a = self._fsi_coeff(units)
+        a = self._fsi_coeff(shape[0])
 
         # reset the distribution function accordingly
-        self._set_distribution(self.distribution, high=a, low=-a)
+        self._set_distribution(self._distribution, high=a, low=-a)
 
-        return super(FastSpectralScaling, self).__call__(shape=(units, units))
+        return super(FastSpectralScaling, self).__call__(shape)
 
     def _fsi_coeff(self, units):
         """Compute FSI coefficient ``a`` (see class documentation).
@@ -161,7 +164,7 @@ class SpectralScaling(RandomSparse):
         >>> sr_scaling = SpectralScaling(distribution="normal",
         ...                              loc=0, scale=1,
         ...                              spectral_radius=0.9)
-        >>> sr_scaling(5)  # generate a (5, 5) weight matrix
+        >>> sr_scaling((5, 5)  # generate a (5, 5) weight matrix
 
     Parameters:
     -----------
@@ -206,21 +209,21 @@ class SpectralScaling(RandomSparse):
                  sparsity_type: str = "csr",
                  seed: Union[int, RandomState] = None,
                  **kwargs):
-        super(SpectralScaling, self).__init__(self, connectivity, distribution,
+        super(SpectralScaling, self).__init__(connectivity, distribution,
                                               sparsity_type, seed, **kwargs)
 
         self.spectral_radius = spectral_radius
 
     def __call__(self,
-                 units: int,
-                 ) -> Union[np.ndarray, scipy.sparse]:
+                 shape: Tuple[int, int],
+                 ) -> Union[np.ndarray, csr_matrix, csc_matrix, coo_matrix]:
         """Produce a random sparse matrix of representing the
         weights of a specifyed number of neuronal units.
 
         Parameters
         ----------
-        units : int
-            Number of neurons.
+        shape : tuple of int
+            Shape of weight matrix.
 
         Returns
         -------
@@ -230,11 +233,16 @@ class SpectralScaling(RandomSparse):
             depending on the connectivity parameter set in
             the initializer.
         """
-        matrix = super().__call__((units, units))
+        matrix = super().__call__(shape)
         return self.spectral_scaling(matrix)
 
-    def spectral_scaling(self, matrix: Union[scipy.sparse, np.ndarray]
-                          ) -> Union[scipy.sparse, np.ndarray]:
+    def spectral_scaling(self,
+                         matrix: Union[csc_matrix, coo_matrix,
+                                       csr_matrix, np.ndarray]
+                         ) -> Union[csr_matrix,
+                                    np.ndarray,
+                                    csc_matrix,
+                                    coo_matrix]:
         """Rescale a matrix to a specific spectral radius.
 
         Parameters
