@@ -3,7 +3,6 @@ Provides base tools for internal reservoir weights initialization.
 """
 from typing import Union, Tuple
 
-import scipy
 import numpy as np
 
 from numpy.random import RandomState
