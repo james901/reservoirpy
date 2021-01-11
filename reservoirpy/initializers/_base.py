@@ -75,12 +75,11 @@ class Initializer(ABC):
         seed: int or RandomState instance, optional
             If set, will be used to randomly generate the matrices.
         """
-        if type(seed) is RandomState:
-            self._seed = None
+        if isinstance(seed, RandomState):
             self._rs = seed
         else:
-            self._seed = seed
             self._rs = RandomState(seed)
+        self.seed = seed
 
 
 class RandomSparse(Initializer):

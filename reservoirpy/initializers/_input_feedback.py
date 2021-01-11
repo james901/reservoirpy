@@ -15,6 +15,12 @@ class NormalScaling(RandomSparse):
     of the normal distribution from which the weights are
     sampled. The mean of this distribution remains 0.
 
+    For input weights initialization, shape of the returned matrix
+    should always be (resservoir dimension, input dimension).
+    Similarly, for feedback weights initialization,
+    shape of the returned matrix
+    should always be (reservoir dimension, ouput dimension)
+
     Usage:
     ------
         >>> norm_scaling = NormalScaling(connectivity=0.2,
@@ -73,7 +79,13 @@ class UniformScaling(RandomSparse):
 
     The scaling coefficient change the boundaries of the
     uniform distribution from which the weights are
-    sampled. The mean remains 0.
+    sampled.
+
+    For input weights initialization, shape of the returned matrix
+    should always be (resservoir dimension, input dimension).
+    Similarly, for feedback weights initialization,
+    shape of the returned matrix
+    should always be (reservoir dimension, ouput dimension)
 
     Usage:
     ------
@@ -124,7 +136,7 @@ class UniformScaling(RandomSparse):
                                              low=-scaling, high=scaling)
 
 
-class BinaryScaling(RandomSparse):
+class BivaluedScaling(RandomSparse):
     """Class for input and feedback
     weights initialization with only two
     values, -1 and 1. A scaling coefficient can be
@@ -133,10 +145,16 @@ class BinaryScaling(RandomSparse):
     The scaling coefficient is applyed over
     the dicrete values chosen for the weights.
 
+    For input weights initialization, shape of the returned matrix
+    should always be (resservoir dimension, input dimension).
+    Similarly, for feedback weights initialization,
+    shape of the returned matrix
+    should always be (reservoir dimension, ouput dimension)
+
     Usage:
     ------
-        >>> bin_scaling = BinaryScaling(connectivity=0.2,
-        ...                             scaling=0.5)
+        >>> bin_scaling = BivaluedScaling(connectivity=0.2,
+        ...                               scaling=0.5)
         >>> bin_scaling((10, 3))
 
     Parameters:
@@ -174,10 +192,10 @@ class BinaryScaling(RandomSparse):
                  sparsity_type: str = "csr",
                  seed: Union[int, np.random.RandomState] = None,
                  ):
-        super(BinaryScaling, self).__init__(self,
-                                            connectivity,
-                                            distribution="choice",
-                                            sparsity_type=sparsity_type,
-                                            seed=seed,
-                                            a=[-1*scaling, 1*scaling])
+        super(BivaluedScaling, self).__init__(self,
+                                              connectivity,
+                                              distribution="choice",
+                                              sparsity_type=sparsity_type,
+                                              seed=seed,
+                                              a=[-1*scaling, 1*scaling])
         self.scaling = scaling

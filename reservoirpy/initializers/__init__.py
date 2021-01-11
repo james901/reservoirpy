@@ -17,19 +17,21 @@ from ._internal import FastSpectralScaling
 from ._internal import SpectralScaling
 from ._internal import NormalSpectralScaling
 from ._internal import UniformSpectralScaling
-from ._internal import BinarySpectralScaling
+from ._internal import BivaluedSpectralScaling
+from ._internal import LogNormalSpectralScaling
 
 from ._input_feedback import NormalScaling
 from ._input_feedback import UniformScaling
-from ._input_feedback import BinaryScaling
+from ._input_feedback import BivaluedScaling
 
 
 __all__ = [
     "initializer", "Initializer", "RandomSparse",
     "FastSpectralScaling", "SpectralScaling",
     "NormalSpectralScaling", "UniformSpectralScaling",
-    "BinarySpectralScaling", "NormalScaling", "UniformScaling",
-    "BinaryScaling"
+    "BivaluedSpectralScaling", "LogNormalSpectralScaling",
+    "NormalScaling", "UniformScaling",
+    "BivaluedScaling"
 ]
 
 
@@ -42,11 +44,12 @@ _registry = {
             "spectral": UniformSpectralScaling,
             "scaling": UniformScaling
         },
-        "binary": {
-            "spectral": BinarySpectralScaling,
-            "scaling": BinaryScaling
+        "bivalued": {
+            "spectral": BivaluedSpectralScaling,
+            "scaling": BivaluedScaling
         },
-        "fsi": FastSpectralScaling
+        "fsi": FastSpectralScaling,
+        "lognormal": LogNormalSpectralScaling
     }
 
 
@@ -62,7 +65,7 @@ def initializer(method: str,
 
     Parameters
     ----------
-    method : {"normal", "uniform", "binary", "fsi"}
+    method : {"normal", "uniform", "bivalued", "fsi"}
         Method used for randomly sample the weights.
         "fsi" can only be used with spectral scaling.
     connectivity : float, optional
@@ -96,9 +99,15 @@ def initializer(method: str,
 
     if selection is None:
         raise ValueError(f"'{method}' is not a valid method. "
-                         "Must be 'fsi', 'normal', 'uniform' or 'binary'.")
+                         "Must be 'fsi', 'normal', 'uniform' or 'bivalued'.")
 
     if method == "fsi":
+        return selection(spectral_radius=spectral_radius,
+                         connectivity=connectivity,
+                         seed=seed,
+                         **kwargs)
+
+    if method == "lognormal":
         return selection(spectral_radius=spectral_radius,
                          connectivity=connectivity,
                          seed=seed,

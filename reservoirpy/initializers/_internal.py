@@ -381,7 +381,7 @@ class UniformSpectralScaling(SpectralScaling):
                                                low=low)
 
 
-class BinarySpectralScaling(SpectralScaling):
+class BivaluedSpectralScaling(SpectralScaling):
     """Convenience class for weight initialization
     with spectral radius scaling and random discrete
     distribution of weights over two values.
@@ -390,8 +390,8 @@ class BinarySpectralScaling(SpectralScaling):
     ------
         Same as :class: `SpectralScaling`.
 
-        >>> bin_spectral = BinarySpectralScaling(spectral_radius=0.9,
-        ...                                       val1=-1, val2=1)
+        >>> bin_spectral = BivaluedSpectralScaling(spectral_radius=0.9,
+        ...                                        val1=-1, val2=1)
         >>> bin_spectral(5)
 
     Parameters:
@@ -436,13 +436,75 @@ class BinarySpectralScaling(SpectralScaling):
                  sparsity_type: str = "csr",
                  val1: float = -1,
                  val2: float = 1,
-                 seed: Union[int, np.random.RandomState] = None):
-        super(BinarySpectralScaling, self).__init__(connectivity,
-                                                    spectral_radius,
-                                                    distribution="choice",
-                                                    sparsity_type=sparsity_type,
-                                                    seed=seed,
-                                                    a=[val1, val2])
+                 seed: Union[int, RandomState] = None):
+        super(BivaluedSpectralScaling, self).__init__(connectivity,
+                                                      spectral_radius,
+                                                      distribution="choice",
+                                                      sparsity_type=sparsity_type,
+                                                      seed=seed,
+                                                      a=[val1, val2])
+
+
+class LogNormalSpectralScaling(SpectralScaling):
+    """Convenience class for weight initialization
+    with spectral radius scaling and log-normal distribution
+    of weights value.
+
+    Usage:
+    ------
+        Same as :class: `SpectralScaling`
+
+    Parameters:
+    -----------
+    connectivity: float, defaults to 0.1
+        Probability of connection between units. Density of
+        the sparse matrix.
+
+    spectral_radius: float, optional
+        Maximum eigenvalue of the initialized matrix.
+
+    mean: float, defaults to 0
+         Mean of the distribution
+
+    sigma: float, default to 1
+        Standard deviation of the distribution
+
+    sparsity_type: {"csr", "csc", "coo"}, defaults to "csr"
+        scipy.sparse format to use.
+
+    seed: int
+        Random state generator seed.
+
+    Attributes:
+    -----------
+    connectivity : float, defaults to 0.1
+
+    spectral_radius: float, optional
+
+    mean: float, default to 0
+
+    sigma: float, default to 1
+
+    distribution: {"lognormal"}
+
+    sparsity_type: {"csr", "csc", "coo"}, defaults to "csr"
+
+    seed: int or RandomState instance
+    """
+    def __init__(self,
+                 connectivity: float = 0.1,
+                 spectral_radius: float = None,
+                 sparsity_type: str = "csr",
+                 mean: float = 0.,
+                 sigma: float = 1.,
+                 seed: Union[int, RandomState] = None):
+        super(LogNormalSpectralScaling, self).__init__(connectivity,
+                                                       spectral_radius,
+                                                       distribution="lognormal",
+                                                       sparsity_type=sparsity_type,
+                                                       seed=seed,
+                                                       mean=mean,
+                                                       sigma=sigma)
 
 
 def is_probability(proba):
