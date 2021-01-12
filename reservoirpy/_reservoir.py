@@ -78,8 +78,12 @@ class Reservoir(object):
         self.Win = self.win_init_func((self.shape[1], self.shape[0]))
 
     def _build(self):
-        ...
+        self.reset_seed(self.seed)
+        self._build_input()
+        self._build_internal()
 
+    #? find a way to reinit everything when changing the seed
+    #? even when the Initializers API is not used
     def reset_seed(self, seed: Union[int, RandomState]):
         if isinstance(seed, RandomState):
             self._rs = seed
