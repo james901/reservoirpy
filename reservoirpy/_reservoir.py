@@ -11,8 +11,9 @@ class Reservoir(object):
 
     def __init__(self,
                  shape: Union[Tuple[Tuple[int], int], Tuple[int]],
-                 leak: int,
+                 leak: float,
                  spectral_radius: float,
+                 bias: bool,
                  input_scaling: Union[float, Tuple[float]],
                  connectivity: float,
                  input_connectivity: Union[float, Tuple[float]],
@@ -45,12 +46,18 @@ class Reservoir(object):
         self.Win = Win
         self.W = W
 
+        self._build()
+
+        self.state = None
+
     def __call__(self,
                  inputs,
                  feedback=None,
+                 teachers=None,
                  init_state=None,
                  noise_seed=None):
         ...
+
 
     def _set_w_initializer(self, arg):
         if callable(arg):
@@ -78,9 +85,63 @@ class Reservoir(object):
         self.Win = self.win_init_func((self.shape[1], self.shape[0]))
 
     def _build(self):
-        self.reset_seed(self.seed)
         self._build_input()
         self._build_internal()
+
+    def _run(self, inputs, teachers, readout, init_state, noise_seed):
+        responses = np.zeros(inputs.shape[0], self.shape[1])
+        for t in range(inputs.shape[0]):
+            teacher = None
+            if teachers is not None:
+                teacher = teachers[t]
+            fb = readout.feedback(teachers)
+            responses[t] = self._next_state(inputs[t], fb)
+
+    def _next_state(self,
+                    single_input: np.ndarray,
+                    feedback: np.ndarray = None,
+                    last_state: np.ndarray = None) -> np.ndarray:
+        """Given a state vector x(t) and an input vector u(t), compute the state vector x(t+1).
+
+        Arguments:
+            single_input {np.ndarray} -- Input vector u(t).
+
+        Keyword Arguments:
+            feedback {np.ndarray} -- Feedback vector if enabled. (default: {None})
+            last_state {np.ndarray} -- Current state to update x(t). If None,
+                                       state is initialized to 0. (default: {None})
+
+        Raises:
+            RuntimeError: feedback is enabled but no feedback vector is available.
+
+        Returns:
+            np.ndarray -- Next state x(t+1).
+        """
+        # first initialize the current state of the ESN
+        if last_state is None:
+            x = np.zeros((self.shape[1], 1),dtype=self.typefloat)
+        else:
+            x = last_state
+
+        # add bias
+        if self.bias:
+            u = np.hstack((1, single_input)).astype(self.typefloat)
+        else:
+            u = single_input
+
+        # linear transformation
+        x1 = np.dot(self.Win, u.reshape(self.shape[0], 1)) \
+            + self.W.dot(x)
+
+        # add feedback if requested
+        if feedback is not None:
+            x1 += feedback
+
+        # previous states memory leak and non-linear transformation
+        x1 = (1-self.leak)*x + self.leak*self.activation(x1)
+
+        # return the next state computed
+        return x1
 
     #? find a way to reinit everything when changing the seed
     #? even when the Initializers API is not used
@@ -90,3 +151,5 @@ class Reservoir(object):
         else:
             self._rs = RandomState(seed)
         self.seed = seed
+
+        self._build()
