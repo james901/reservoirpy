@@ -1,3 +1,6 @@
+""":mod: `reservoirpy.initilializers._input_feedback`
+Provides base tools for input and feedback weights initialization.
+"""
 from typing import Union
 
 import numpy as np
